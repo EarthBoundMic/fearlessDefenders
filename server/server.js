@@ -1,6 +1,7 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
+const path = require('path');
 
 const app = express();
 
@@ -11,7 +12,7 @@ const headers = {
   'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE',
 };
 
-app.use(express.static(__dirname.join('/../src')));
+app.use(express.static(path.join(__dirname, '../build')));
 
 app.use((req, res, next) => {
   res.header(headers);
@@ -34,9 +35,13 @@ app.post('/', (req, res) => {
 // });
 
 app.get('/', (req, res) => {
-  res.writeHead(200, headers);
-  res.end('Hello Get World');
+  res.status(200).sendFile('./index.html');
 });
 
-app.listen(3000);
 
+app.get('*', (req, res) => {
+  res.writeHead(404, headers);
+  res.end('Resource not found');
+});
+
+app.listen(process.env.PORT || 3000);
