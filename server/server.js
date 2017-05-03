@@ -1,7 +1,6 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
-const toneAnalyzer = require('../watson');
 
 const app = express();
 
@@ -37,23 +36,6 @@ app.post('/', (req, res) => {
 app.get('/', (req, res) => {
   res.writeHead(200, headers);
   res.end('Hello Get World');
-});
-
-
-/*watson requests*/
-
-app.get('/v3/tone', (req, res) => {
-
-});
-
-app.post('/v3/tone', (req, res) => {
-  toneAnalyzer.tone({ text: 'A word is dead when it is said, some say. Emily Dickinson' },
-    function(err, tone) {
-      if (err)
-        console.log(err);
-      else
-        res.json(tone, null, 2);
-  });
 });
 
 app.listen(3000);
