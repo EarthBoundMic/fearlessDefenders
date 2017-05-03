@@ -19,7 +19,7 @@ coverage
 .grunt
 
 # Compiled Dirs (http://nodejs.org/api/addons.html)
-# build/
+build/
 dist/
 
 # Dependency directorys
@@ -29,7 +29,7 @@ node_modules/
 bower_components/
 
 ## API keys ##
+spikes/twitter_keys.js
 
 # Change according to file path
-
 watson.js
