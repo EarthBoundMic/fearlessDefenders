@@ -28,3 +28,8 @@ dist/
 node_modules/
 bower_components/
 
+## API keys ##
+spikes/twitter_keys.js
+
+# Change according to file path
+watson.js
