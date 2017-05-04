@@ -3,45 +3,39 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const path = require('path');
 
-const app = express();
+const toneAnalyzer = require('./watson');
 
-// Cors dealt with outside server.js although kept commented if needed
-const headers = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE',
-};
+const app = express();
 
 app.use(express.static(path.join(__dirname, '../build')));
 
-app.use((req, res, next) => {
-  res.header(headers);
-  next();
-});
-
 app.use(cookieParser());
-app.use(bodyParser());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.text());
 
-app.post('/', (req, res) => {
-  res.writeHead(201, headers);
-  res.end('Hello World');
+app.get('/api/watson', (req, res) => {
+  const input = {
+    utterances: [
+      { text: 'Basically think of $AAPL as a ~$32B SaaS business linked to a ~$200B hardware business with gross margins of ~38 percent ' },
+      { text: 'When @tim_cook was here one year ago today, $AAPL was at $93. "Hold it, don\'t trade it." -@JimCramer' },
+      { text: 'Hilarious that @jimcramer mentioned the @amazonfirephone in his interview with @tim_cook. #CNBC #MadMoney $AAPL' },
+    ],
+  };
+
+  toneAnalyzer.tone_chat(input, (err, tone) => {
+    if (err) { return console.warn(err); }
+    return res.send(tone);
+  });
 });
 
-// To add when deployed
-// app.get('/cookie', function(req, res) {
-//   res.cookie(cookie_name , 'cookie_value').send('Cookie is set');
-// });
-
-app.get('/', (req, res) => {
-  res.status(200).sendFile('./index.html');
+app.get('/:bad*', (req, res) => {
+  res.status(404).send(`Resource not found '${req.params.bad}'`);
 });
 
-
-app.get('*', (req, res) => {
-  res.writeHead(404, headers);
-  res.end('Resource not found');
+app.listen(process.env.PORT || 3000, () => {
+  console.warn('Backend server listening on port 3000!');
 });
+
 
 app.listen(process.env.PORT || 3000);
+
