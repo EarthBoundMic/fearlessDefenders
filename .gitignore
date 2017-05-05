@@ -35,4 +35,7 @@ spikes/twitter_keys.js
 server/config.js
 
 # Local config files
-.vscode/
+vscode/
+/config/config.dev.js
+*.DS_Store
+config.js
