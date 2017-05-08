@@ -1,5 +1,3 @@
-// change name to config.js after adding api keys to make app work
-
 module.exports = {
   watson: {
     username: 'WATSON_USERNAME_HERE',

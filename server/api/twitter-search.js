@@ -1,5 +1,5 @@
 const Twitter = require('twitter-node-client').Twitter;
-const Keys = require('../server/config.js').twitter;
+const Keys = require('../../config').twitter;
 const Promise = require('bluebird');
 
 const keys = {
@@ -10,6 +10,14 @@ const keys = {
 };
 
 const twitter = new Twitter(keys);
+
+const yyyymmdd = (date) => {
+  console.log(date, date.getMonth(), date.getDay(), date.getDate());
+  const mm = date.getMonth() + 1;
+  const dd = date.getDate();
+
+  return [date.getFullYear(), '-', (mm > 9 ? '' : '0') + mm, '-', (dd > 9 ? '' : '0') + dd].join('');
+};
 
 /**
  * Helper function that loops through promises (getting tweets)
@@ -54,6 +62,10 @@ const getTweetSet = (query, startDate, endDate, maxTweets, callback) => {
   let tweetCount = 0;
   let endOfResults = false;
 
+  endDate = new Date(endDate);
+  endDate.setDate(endDate.getDate() + 2);
+  endDate = yyyymmdd(new Date(endDate));
+
   // Last tweet retrieved from current "page" of retrieved tweets
   // = the starting point for the next call to retrieve tweets
   let maxId = null;
@@ -80,6 +92,8 @@ const getTweetSet = (query, startDate, endDate, maxTweets, callback) => {
         count: 100,
       };
 
+      console.log(params);
+      
       if (maxId !== null) params.max_id = maxId;
 
       // Callback function for error case for twitter.getSearch
@@ -104,13 +118,11 @@ const getTweetSet = (query, startDate, endDate, maxTweets, callback) => {
           if (tweets.length === 0) {
             endOfResults = true;
           } else {
-            tweetsArray = tweets.map((tweet) => {
-              return {
-                id: tweet.id,
-                created_at: tweet.created_at,
-                text: tweet.text,
-              };
-            });
+            tweetsArray = tweets.map(tweet => ({
+              id: tweet.id,
+              created_at: tweet.created_at,
+              text: tweet.text,
+            }));
             tweetSet = tweetSet.concat(tweetsArray);
             maxId = tweetsArray[tweetsArray.length - 1].id;
             tweetCount += tweetsArray.length;
@@ -133,12 +145,40 @@ const getTweetSet = (query, startDate, endDate, maxTweets, callback) => {
  *  Example usage:
  */
 
-getTweetSet('$AAPL', '2017-03-01', '2017-05-03', 200, (tweetSet) => {
-  console.log('*** Tweets received *** [', tweetSet.length, ']');
+// getTweetSet('$AAPL', '2017-03-01', '2017-05-03', 200, (tweetSet) => {
+//   console.log('*** Tweets received *** [', tweetSet.length, ']');
 
-  if (tweetSet.length > 0) {
-    console.log('Most recent: ', tweetSet[0].created_at);
-    console.log('Least recent: ', tweetSet[tweetSet.length - 1].created_at);
-    console.log(tweetSet.slice(190));
-  }
-});
+//   if (tweetSet.length > 0) {
+//     console.log('Most recent: ', tweetSet[0].created_at);
+//     console.log('Least recent: ', tweetSet[tweetSet.length - 1].created_at);
+//     console.log(tweetSet.slice(190));
+//   }
+// });
+
+const getTweets = (req, res) => {
+  const query = req.body.query;
+  const endDate = req.body.endDate || new Date();
+  const startDate = req.body.startDate || new Date(endDate - (1000 * 60 * 60 * 24 * 2));
+  const maxTweets = req.body.maxTweets || 1000;
+
+  getTweetSet(query, startDate, endDate, maxTweets, (tweetSet) => {
+    console.log('*** REQ.BODY ***', query, startDate, endDate, maxTweets);
+
+    console.log('*** Tweets received *** [', tweetSet.length, ']');
+
+    if (tweetSet.length > 0) {
+      tweetSet = tweetSet.slice(0, maxTweets);
+      res.send({
+        symbol: query,
+        first: tweetSet[tweetSet.length - 1].created_at,
+        last: tweetSet[0].created_at,
+        tweetCount: tweetSet.length,
+        text: tweetSet.reduce((a, b) => `${a} ${b.text}`, ''),
+      });
+    } else {
+      res.send({ message: 'no tweets received' });
+    }
+  });
+};
+
+module.exports.getTweets = getTweets;

@@ -2,6 +2,19 @@
   font-family: 'Helvetica Neue';
 }
 
+body {
+  background-color: gray;
+}
+
+.site-wrap {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  max-width: 960px;
+  margin: auto;
+  padding: 10px;
+}
+
 .header {
   min-height: 4rem;
   background-color: #121212;
@@ -15,7 +28,6 @@
 }
 
 .nav {
-  min-height: 5rem;
   background-color: #323232;
   display: flex;
   justify-content: flex-end;
@@ -24,7 +36,7 @@
 
 .content {
   display: flex;
-  min-height: 700px;
+  flex: 1;
 }
 
 
