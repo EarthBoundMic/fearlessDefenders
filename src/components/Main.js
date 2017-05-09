@@ -1,12 +1,13 @@
 import React from 'react';
 
+import StockChart from './StockChart';
+
 import './css/Main.css';
 
-
-const Main = ({ data }) => (
+const Main = ({ data, ticker }) => (
   <div className="main">
     <h2>Main</h2>
-    <pre>{JSON.stringify(data, null, 2)}</pre>
+    <StockChart ticker={ticker} />
   </div>
 );
 
