@@ -2,36 +2,35 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const path = require('path');
-
 const request = require('request');
 
+const Scores = require('./db');
+const naturalLanguage = require('./watson');
 const TwitterSearch = require('./api/twitter-search.js');
 const TwitterStream = require('./api/twitter-stream.js').twitterClient;
 
 const socket = require('socket.io')({
-  'transports': ['xhr-polling'],
+  transports: ['xhr-polling'],
   'polling duration': 10,
 });
 
-const naturalLanguage = require('./watson');
-
 const app = express();
 
-/**
+/*
  *  EXPRESS CONFIG
  */
 
 app.use(express.static(path.join(__dirname, '../build')));
 
 app.use(cookieParser());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // const cors = require('cors');
 // app.use(cors());
 
 app.get('/api/quandl/:ticker', (req, res) => {
-  request('https://www.quandl.com/api/v3/datasets/WIKI/'+req.params.ticker+'.json?api_key=gxKmSwX855L3gFQvaiNL', function (error, response, body) {
+  request('https://www.quandl.com/api/v3/datasets/WIKI/'+req.params.ticker+'.json?start_date=2017-01-01?api_key=gxKmSwX855L3gFQvaiNL', function (error, response, body) {
     if (!error && response.statusCode == 200) {
       res.end(response.body);
     } else {
@@ -47,7 +46,28 @@ app.post('/api/watson', (req, res) => {
     .catch(err => res.send(err));
 });
 
-/**
+app.get('/api/db', (req, res) => {
+  const { date, symbol } = req.query;
+  if (date) {
+    Scores.find({ date, symbol })
+      .then(scores => res.send(scores));
+  } else {
+    Scores.find({ symbol })
+      .then(scores => res.send(scores));
+  }
+});
+
+app.post('/api/db', (req, res) => {
+  const { date, score, symbol } = req.body;
+  const newScore = new Scores({ date, score, symbol });
+
+  newScore.save().then((saved) => {
+    console.log({ saved });
+    res.send(saved);
+  });
+});
+
+/*
  *    SOCKET IO CONFIG
  */
 
@@ -86,7 +106,6 @@ app.post('/api/tweets', TwitterSearch.getTweets);
 let stream;
 
 app.post('/api/stream', (req, res) => {
-
   console.log('[server] api/stream - STREAMING REQUEST', req.body.ticker);
 
   if (stream) stream.destroy();
@@ -123,9 +142,10 @@ app.post('/api/stream', (req, res) => {
   }
 });
 
-app.get('/quandl/:ticker', (req, res) => {
-  request('https://www.quandl.com/api/v3/datasets/WIKI/' + req.params.ticker + '.json?api_key=gxKmSwX855L3gFQvaiNL', function (error, response, body) {
-    if (!error && response.statusCode == 200) {
+app.get('/api/quandl/:ticker', (req, res) => {
+  const url = `https://www.quandl.com/api/v3/datasets/WIKI/${req.params.ticker}.json?api_key=gxKmSwX855L3gFQvaiNL`;
+  request(url, (error, response) => {
+    if (!error && response.statusCode === 200) {
       res.end(response.body);
     } else {
       console.log(error);

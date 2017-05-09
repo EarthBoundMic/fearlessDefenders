@@ -22,9 +22,12 @@ class App extends React.Component {
   }
 
   fetchData(symbol) {
-    const dates = getDates(2);
+    const numberOfDays = 5;
+    const dates = getDates(numberOfDays);
+
     Promise.all(dates.map(date => getSentiment(date, symbol)))
-      .then(res => { debugger; });
+      .then(data => this.setState(data))
+      .then(() => console.log('SUCCESS!!'));
   }
 
   changeTicker(ticker) {
@@ -32,14 +35,13 @@ class App extends React.Component {
   }
 
   render() {
-    // debugger;
     return (
       <div className="site-wrap">
         <div className="header">
           <h1>Hack Trader</h1>
         </div>
         <div className="nav">
-          <Search fetchData={this.fetchData} changeTicker={this.changeTicker}/>
+          <Search fetchData={this.fetchData} changeTicker={this.changeTicker} />
         </div>
         <div className="content">
           <Sidebar />
