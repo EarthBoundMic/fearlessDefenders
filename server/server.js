@@ -30,31 +30,55 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // app.use(cors());
 
 app.get('/api/quandl/:ticker', (req, res) => {
-  request('https://www.quandl.com/api/v3/datasets/WIKI/'+req.params.ticker+'.json?start_date=2017-01-01?api_key=gxKmSwX855L3gFQvaiNL', function (error, response, body) {
-    if (!error && response.statusCode == 200) {
+  request('https://www.quandl.com/api/v3/datasets/WIKI/' + req.params.ticker + '.json?start_date=2017-04-01&api_key=gxKmSwX855L3gFQvaiNL', (error, response, body) => {
+    if (!error && response.statusCode === 200) {
       res.end(response.body);
     } else {
-      console.log(error);
+      res.end(error, body);
     }
-  })
+  });
 });
 
 app.post('/api/watson', (req, res) => {
   const { text } = req.body;
   naturalLanguage.getSentiment(text)
     .then(response => res.send(response))
-    .catch(err => res.send(err));
+    .catch(err => res.status(400).send(err));
 });
 
 app.get('/api/db', (req, res) => {
   const { date, symbol } = req.query;
   if (date) {
-    Scores.find({ date, symbol })
-      .then(scores => res.send(scores));
+    Scores.findOne({ date, symbol })
+      .then((scores) => {
+        const result = scores || [];
+        res.send(result);
+      });
   } else {
     Scores.find({ symbol })
       .then(scores => res.send(scores));
   }
+});
+
+app.get('/api/db/allCompanies', (req, res) => {
+  Scores.find({})
+    .then(allScores => {
+      let scores = allScores.map(x => {
+        return { date: new Date(x.date), symbol: x.symbol, score: x.score };
+      });
+      scores = scores.sort((a, b) => b.date - a.date);
+      const companies = {};
+      let results = [];
+      scores.forEach(x => {
+        if (!companies.hasOwnProperty(x.symbol)) {
+          companies[x.symbol] = x.symbol;
+          results.push([x.symbol, x.date, x.score]);
+        }
+      });
+      results = results.sort((a, b) => b[2] - a[2]);
+      res.send(JSON.stringify(results));
+    })
+    .catch((err) => res.send({error: `[api/db/all] error retrieving: ${err}`}));
 });
 
 app.post('/api/db', (req, res) => {
@@ -143,9 +167,8 @@ app.post('/api/stream', (req, res) => {
 });
 
 app.get('/api/quandl/:ticker', (req, res) => {
-  const url = `https://www.quandl.com/api/v3/datasets/WIKI/${req.params.ticker}.json?api_key=gxKmSwX855L3gFQvaiNL`;
-  request(url, (error, response) => {
-    if (!error && response.statusCode === 200) {
+  request(`https://www.quandl.com/api/v3/datasets/WIKI/${req.params.ticker}.json?start_date=2017-01-01?api_key=gxKmSwX855L3gFQvaiNL`, (error, response, body) => {
+    if (!error && response.statusCode == 200) {
       res.end(response.body);
     } else {
       console.log(error);

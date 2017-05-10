@@ -5,7 +5,7 @@ import Sidebar from './Sidebar';
 import Main from './Main';
 import Tweets from './Tweets';
 
-import { getDates, getSentiment } from '../helpers';
+import { getDates, getSentiment, getCompanySummary } from '../helpers';
 
 import './css/App.css';
 
@@ -15,23 +15,43 @@ class App extends React.Component {
     this.state = {
       data: {},
       ticker: 'AAPL',
+      companiesSummary: [],
     };
 
     this.fetchData = this.fetchData.bind(this);
     this.changeTicker = this.changeTicker.bind(this);
+    this.fetchCompaniesSummary = this.fetchCompaniesSummary.bind(this);
   }
 
   fetchData(symbol) {
     const numberOfDays = 5;
     const dates = getDates(numberOfDays);
+    debugger;
 
     Promise.all(dates.map(date => getSentiment(date, symbol)))
-      .then(data => this.setState(data))
-      .then(() => console.log('SUCCESS!!'));
+      .then(data => this.setState({ data }))
+      .then(() => {
+        this.fetchCompaniesSummary();
+        console.log('SUCCESS!!');
+      });
+  }
+
+  fetchCompaniesSummary() {
+
+    Promise.resolve(getCompanySummary())
+      .then((companiesSummary) => {
+        (companiesSummary.length > 0) ? this.setState({ companiesSummary }) : null;
+      })
+    .catch(err => console.warn({error: `fetchCompaniesSummary error: ${err}`}));
+
   }
 
   changeTicker(ticker) {
     this.setState({ ticker });
+  }
+
+  componentWillMount() {
+    this.fetchCompaniesSummary();
   }
 
   render() {
@@ -46,16 +66,12 @@ class App extends React.Component {
         <div className="content">
           <Sidebar />
           <Main ticker={this.state.ticker} />
-          <Tweets />
+          <Tweets companiesSummary={this.state.companiesSummary} />
         </div>
       </div>
     );
   }
 
 }
-
-App.propTypes = {
-  // : React.PropTypes.
-};
 
 export default App;
